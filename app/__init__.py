@@ -1,0 +1,2 @@
+"""Shrimp detection web application."""
+

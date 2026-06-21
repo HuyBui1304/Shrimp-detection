@@ -1,0 +1,41 @@
+# Operating systems and editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local configuration
+.env
+.venv/
+venv/
+env/
+
+# Datasets and archives
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.pdf
+data/
+datasets/
+
+# Runtime uploads and generated outputs
+uploads/*
+!uploads/.gitkeep
+runs/*
+!runs/.gitkeep
+benchmark_*.csv
+
+# Notebooks and training outputs
+.ipynb_checkpoints/
+wandb/

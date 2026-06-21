@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Shrimp Detection</title>
+  <link rel="stylesheet" href="/static/styles.css">
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#ffffff">
+
+  <!-- iOS support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Shrimp Detection">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/static/sw.js")
+        .then(() => console.log("Service Worker registered"))
+        .catch(err => console.error("SW registration failed:", err));
+    }
+  </script>
+
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+   <style>
+    :root {
+      --bg-page: #f5f5f5;
+      --bg-card: #ffffff;
+      --border-soft: #e5e7eb;
+      --accent: #0f9ba8;
+      --accent-soft: #e0f7fa;
+      --accent-strong: #047481;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --radius-lg: 16px;
+      --radius-pill: 999px;
+      --transition-fast: 0.18s ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-page) !important;
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Header */
+
+    header {
+      background-color: #ffffff !important;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    .header-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .title-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #22c55e, #0f9ba8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 21px;
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.18);
+    }
+
+    .title {
+      font-size: 1.6rem;
+      margin: 0;
+      font-weight: 700;
+      color: #0f172a;
+      text-shadow: 0 1px 2px rgba(148, 163, 184, 0.5);
+    }
+
+    .subheading {
+      font-size: 0.95rem;
+      margin: 2px 0 0;
+      color: var(--text-muted);
+    }
+
+    .header-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .tag-pill {
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag-pill i {
+      color: var(--accent);
+      font-size: 0.8rem;
+    }
+
+    /* ===== PAGE WRAPPER ===== */
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    section {
+      margin-bottom: 32px;
+    }
+
+    h3 {
+      margin: 12px 0 8px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px dashed #e5e7eb;
+      margin: 24px 0;
+    }
+
+    /* Controls */
+
+    section .controls {
+      background-color: #ffffff !important;
+      padding: 14px 16px;
+      margin: 10px 0 14px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-soft) !important;
+    }
+
+    .controls input[type="file"] {
+      display: none;
+    }
+
+    .controls label {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .controls input[type="number"] {
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      font-size: 0.9rem;
+      width: 80px;
+      outline: none;
+      color: var(--text-main);
+      background-color: #ffffff;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .controls input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+    }
+
+    .controls .upload-btn {
+      background-color: #ffffff !important;
+      color: var(--accent-strong);
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--accent-soft);
+      box-shadow: 0 6px 15px rgba(15, 118, 110, 0.10);
+      transition: background-color var(--transition-fast), transform var(--transition-fast),
+                  box-shadow var(--transition-fast), color var(--transition-fast);
+    }
+
+    .controls .upload-btn i {
+      margin-right: 6px;
+      color: var(--accent-strong);
+    }
+
+    .controls .upload-btn:hover {
+      background-color: var(--accent-soft);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(15, 118, 110, 0.15);
+    }
+
+    .btn-predict,
+    .btn-stop {
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      font-size: 0.9rem;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color var(--transition-fast), transform var(--transition-fast),
+                  box-shadow var(--transition-fast), opacity var(--transition-fast);
+    }
+
+    .btn-predict {
+      background-color: var(--accent) !important;
+      color: #ffffff !important;
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.18);
+    }
+
+    .btn-stop {
+      background-color: #f97373 !important;
+      color: #ffffff !important;
+      box-shadow: 0 8px 18px rgba(248, 113, 113, 0.18);
+    }
+
+    /* Layout and panels */
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .panel {
+      flex: 1;
+      border-radius: var(--radius-lg);
+      background-color: #ffffff !important;
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      border: 1px solid var(--border-soft) !important;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+    }
+
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 10px 14px;
+      background-color: #ffffff !important;
+      color: #111827 !important;
+      border-bottom: 1px solid var(--border-soft) !important;
+    }
+
+    .panel img {
+      width: 100%;
+      height: auto;
+      display: block;
+      margin: 0;
+      background-color: #ffffff !important;
+      object-fit: contain;
+    }
+
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      background-color: #ffffff !important;
+    }
+
+    .video-wrap video,
+    .video-wrap canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .meta {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      padding: 4px 2px 8px;
+    }
+
+    .code {
+      background-color: #ffffff !important;
+      padding: 10px 12px;
+      font-family: 'Courier New', monospace;
+      color: #111827;
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+      margin-top: 6px;
+      white-space: pre-wrap;
+    }
+
+    @media screen and (max-width: 840px) {
+      .header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .header-tags {
+        justify-content: flex-start;
+      }
+    }
+
+    @media screen and (max-width: 768px) {
+      .row {
+        flex-direction: column;
+      }
+      .page {
+        padding: 18px 12px 28px;
+      }
+    }
+  </style>
+
+</head>
+<body>
+
+  <!-- Header Section -->
+  <header>
+    <div class="header-inner">
+      <div class="title-block">
+        <div class="logo-circle">
+          <i class="fas fa-fish"></i>
+        </div>
+        <div>
+          <h1 class="title">Shrimp Detection</h1>
+          <p class="subheading">Predicting and identifying shrimp diseases from photos, videos and cameras.</p>
+        </div>
+      </div>
+      <div class="header-tags">
+        <span class="tag-pill"><i class="fas fa-bolt"></i> Real-time</span>
+        <span class="tag-pill"><i class="fas fa-brain"></i> YOLOv8 / YOLO11</span>
+        <span class="tag-pill"><i class="fas fa-cloud-upload-alt"></i> Web-based</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <!-- ==================== IMAGE ==================== -->
+    <section id="image-detection">
+      <div class="controls">
+        <label for="file" class="upload-btn"><i class="fas fa-upload"></i> Upload Image</label>
+        <input type="file" id="file" accept="image/*" />
+        <label>imgsz
+          <input type="number" id="imgsz" value="960">
+        </label>
+        <label>conf
+          <input type="number" step="0.01" id="conf" value="0.25">
+        </label>
+        <button id="run" class="btn-predict">Predict <i class="fas fa-play"></i></button>
+      </div>
+
+      <div class="row">
+        <div class="panel">
+          <div class="panel-title">Input preview</div>
+          <img id="preview" alt="Input preview" />
+        </div>
+        <div class="panel">
+          <div class="panel-title">Annotated result</div>
+          <img id="result" alt="Annotated result" />
+        </div>
+      </div>
+
+      <h3>Boxes</h3>
+      <pre id="boxes" class="code"></pre>
+    </section>
+
+    <hr>
+
+    <!-- ==================== VIDEO UPLOAD ==================== -->
+    <section id="video-detection">
+      <h3>Video Upload</h3>
+      <p class="meta">
+       Upload the video and receive the annotated video via MJPEG, while simultaneously displaying the original video side by side for comparison.
+      </p>
+      <div class="controls">
+        <label for="vidfile" class="upload-btn"><i class="fas fa-upload"></i> Upload Video</label>
+        <input type="file" id="vidfile" accept="video/*" />
+        <label>imgsz
+          <input type="number" id="v_imgsz" value="960">
+        </label>
+        <label>conf
+          <input type="number" step="0.01" id="v_conf" value="0.25">
+        </label>
+        <label>stride
+          <input type="number" id="v_stride" value="2" style="width:60px">
+        </label>
+        <button id="runVideo" class="btn-predict">Predict Video <i class="fas fa-video"></i></button>
+        <button id="stopVideo" disabled class="btn-stop">Stop <i class="fas fa-stop"></i></button>
+      </div>
+
+      <div class="row">
+        <div class="panel">
+          <div class="panel-title">Org Video</div>
+          <div id="videoWrap" class="video-wrap">
+            <video id="origVideo" controls playsinline></video>
+            <canvas id="overlay"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Video stream</div>
+          <img id="annotStream" alt="Annotated stream will appear here" />
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ==================== LIVE CAMERA ==================== -->
+    <section id="camera-detection">
+      <h3>Live Camera</h3>
+      <p class="meta">Capture directly from the device camera. The API sends a POST /predict request for each frame and then overlays the results.</p>
+      <div class="controls">
+        <label>imgsz
+          <input type="number" id="cam_imgsz" value="640">
+        </label>
+        <label>conf
+          <input type="number" step="0.01" id="cam_conf" value="0.25">
+        </label>
+        <button id="camStart" class="btn-predict">Start Camera <i class="fas fa-camera"></i></button>
+        <button id="camStop" disabled class="btn-stop">Stop <i class="fas fa-stop"></i></button>
+      </div>
+
+      <div class="row">
+        <div class="panel">
+          <div class="panel-title">Camera preview</div>
+          <div class="video-wrap">
+            <video id="camVideo" autoplay playsinline muted></video>
+            <canvas id="camOverlay"></canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Status</div>
+          <div id="camInfo" class="meta" style="padding:10px 14px;">Not running.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/scripts.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+name: Quality checks
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Python
+        run: python -m py_compile app/main.py scripts/benchmark_model.py scripts/benchmark_api.py
+
+      - name: Validate shell script
+        run: bash -n scripts/run_benchmark.sh
+
+      - name: Validate web assets
+        run: |
+          node --check app/static/scripts.js
+          python -m json.tool app/static/manifest.json >/dev/null
