@@ -29,6 +29,42 @@ shrimp-detection/
 - A compatible Ultralytics YOLO `.pt` model
 - FFmpeg, optionally, for browser-compatible uploaded videos
 
+## Training dataset export formats
+
+When exporting labeled data from Roboflow, use the format that matches the
+training framework for each model:
+
+| Model | Roboflow export format | Notes |
+| --- | --- | --- |
+| YOLOv8 / YOLOv11 | `YOLOv8` or `YOLOv11` | Native format for Ultralytics YOLO training. |
+| RT-DETR | `YOLOv8` or `YOLOv11` | Use this when training RT-DETR through `ultralytics.RTDETR`; it reads `data.yaml` directly. |
+| Faster R-CNN | `COCO JSON` | Best fit for PyTorch detection pipelines; annotations are stored in `_annotations.coco.json`. |
+| EfficientDet | `COCO JSON` | Most EfficientDet implementations expect COCO-style boxes/classes. |
+
+Recommended exports:
+
+```text
+datasets/
+|-- shrimp-yolo/                 # Export from Roboflow as YOLOv11 or YOLOv8
+|   |-- data.yaml
+|   |-- train/images/
+|   |-- train/labels/
+|   |-- valid/images/
+|   |-- valid/labels/
+|   |-- test/images/
+|   `-- test/labels/
+`-- shrimp-coco/                 # Export from Roboflow as COCO JSON
+    |-- train/
+    |   `-- _annotations.coco.json
+    |-- valid/
+    |   `-- _annotations.coco.json
+    `-- test/
+        `-- _annotations.coco.json
+```
+
+Use `shrimp-yolo` for YOLO and RT-DETR notebooks. Use `shrimp-coco` for
+Faster R-CNN and EfficientDet notebooks.
+
 ## Local setup
 
 Run every command from the repository root, `shrimp-detection`:
