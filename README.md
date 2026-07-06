@@ -17,6 +17,7 @@ shrimp-detection/
 |   |-- benchmark_api.py         # End-to-end API benchmark
 |   |-- benchmark_model.py       # Local model benchmark
 |   `-- run_benchmark.sh         # Benchmark helper
+|-- file code để train/          # Training notebooks
 |-- uploads/                     # Runtime uploads, ignored by Git
 |-- runs/                        # Generated output, ignored by Git
 |-- .env.example                 # Environment configuration example
@@ -64,6 +65,51 @@ datasets/
 
 Use `shrimp-yolo` for YOLO and RT-DETR notebooks. Use `shrimp-coco` for
 Faster R-CNN and EfficientDet notebooks.
+
+## Training notebooks
+
+Training is intended to run in Google Colab with a GPU runtime.
+
+Available notebooks:
+
+| Notebook | Models | Dataset export required |
+| --- | --- | --- |
+| `file code để train/shrimp.ipynb` | YOLOv8 / YOLOv11 comparison | `YOLOv8` or `YOLOv11` |
+| `file code để train/train_fasterrcnn_effdet_rtdetr.ipynb` | Faster R-CNN, EfficientDet, RT-DETR | `COCO JSON` for Faster R-CNN/EfficientDet, `YOLOv8` or `YOLOv11` for RT-DETR |
+
+Recommended Colab paths:
+
+```text
+/content/shrimp-yolo/
+|-- data.yaml
+|-- train/images/
+|-- train/labels/
+|-- valid/images/
+|-- valid/labels/
+|-- test/images/
+`-- test/labels/
+
+/content/shrimp-coco/
+|-- train/
+|   `-- _annotations.coco.json
+|-- valid/
+|   `-- _annotations.coco.json
+`-- test/
+    `-- _annotations.coco.json
+```
+
+Run order in Colab:
+
+1. Upload or unzip the Roboflow export so the folders match the paths above.
+2. Open the notebook.
+3. Use `Runtime > Change runtime type > GPU`.
+4. Run the cells from top to bottom.
+5. Trained outputs are saved to Google Drive:
+   - YOLO notebooks: `/content/drive/MyDrive/shrimp/runs`
+   - Faster R-CNN / EfficientDet / RT-DETR notebook: `/content/drive/MyDrive/shrimp/runs_detection_models`
+
+If Colab runs out of GPU memory, reduce `BATCH_SIZE` in the notebook to `2` or
+`1`.
 
 ## Local setup
 
