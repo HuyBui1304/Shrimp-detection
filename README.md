@@ -111,6 +111,26 @@ Run order in Colab:
 If Colab runs out of GPU memory, reduce `BATCH_SIZE` in the notebook to `2` or
 `1`.
 
+Example Colab dataset setup:
+
+```bash
+# YOLOv8/YOLOv11 export for YOLO and RT-DETR
+unzip shrimp-yolo.zip -d /content/shrimp-yolo
+
+# COCO JSON export for Faster R-CNN and EfficientDet
+unzip shrimp-coco.zip -d /content/shrimp-coco
+```
+
+After unzipping, verify that these files exist before running the training
+cells:
+
+```bash
+ls /content/shrimp-yolo/data.yaml
+ls /content/shrimp-coco/train/_annotations.coco.json
+ls /content/shrimp-coco/valid/_annotations.coco.json
+ls /content/shrimp-coco/test/_annotations.coco.json
+```
+
 ## Local setup
 
 Run every command from the repository root, `shrimp-detection`:
