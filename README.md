@@ -190,3 +190,5 @@ git remote set-url origin https://github.com/AmadasResearchGroup/shrimp-detectio
 
 Do not push the parent `shrimp` folder. Dataset ZIP files, PDFs, uploads, logs,
 cache files, and benchmark outputs are excluded from Git.
+
+For questions, please contact huybm.ds@gmail.com.
