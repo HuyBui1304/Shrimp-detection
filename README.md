@@ -17,7 +17,7 @@ shrimp-detection/
 |   |-- benchmark_api.py         # End-to-end API benchmark
 |   |-- benchmark_model.py       # Local model benchmark
 |   `-- run_benchmark.sh         # Benchmark helper
-|-- file code để train/          # Training notebooks
+|-- training_notebooks/          # Training notebooks
 |-- uploads/                     # Runtime uploads, ignored by Git
 |-- runs/                        # Generated output, ignored by Git
 |-- .env.example                 # Environment configuration example
@@ -74,8 +74,8 @@ Available notebooks:
 
 | Notebook | Models | Dataset export required |
 | --- | --- | --- |
-| `file code để train/shrimp.ipynb` | YOLOv8 / YOLOv11 comparison | `YOLOv8` or `YOLOv11` |
-| `file code để train/train_fasterrcnn_effdet_rtdetr.ipynb` | Faster R-CNN, EfficientDet, RT-DETR | `COCO JSON` for Faster R-CNN/EfficientDet, `YOLOv8` or `YOLOv11` for RT-DETR |
+| `training_notebooks/shrimp.ipynb` | YOLOv8 / YOLOv11 comparison | `YOLOv8` or `YOLOv11` |
+| `training_notebooks/train_fasterrcnn_effdet_rtdetr.ipynb` | Faster R-CNN, EfficientDet, RT-DETR | `COCO JSON` for Faster R-CNN/EfficientDet, `YOLOv8` or `YOLOv11` for RT-DETR |
 
 Recommended Colab paths:
 
