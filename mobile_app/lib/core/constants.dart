@@ -14,13 +14,43 @@ class ShrimpClass {
   static const int diseased = 1;
 
   static const List<String> labels = ['Tôm khỏe', 'Tôm bệnh'];
-  static const List<Color> colors = [Color(0xFF22C55E), Color(0xFFEF4444)];
+
+  /// Ký hiệu đi kèm nhãn trên box. Màu sắc không bao giờ được là kênh thông tin
+  /// duy nhất — xem ghi chú về mù màu ở phần màu bên dưới.
+  static const List<String> marks = ['✓', '!'];
+
+  static const List<IconData> icons = [
+    Icons.check_circle_rounded,
+    Icons.error_rounded,
+  ];
+
+  /// Xanh dương cho tôm khỏe thay vì xanh lá.
+  ///
+  /// Cặp xanh lá/đỏ quen thuộc là cái bẫy mù màu kinh điển: đo bằng OKLab ΔE
+  /// với ma trận mô phỏng Machado 2009, cặp `#22C55E`/`#EF4444` chỉ đạt **7.4**
+  /// ở dạng deuteranopia (ngưỡng an toàn là 8), còn cặp xanh lá/đỏ "chuẩn" của
+  /// hệ thống thiết kế thậm chí chỉ 4.1. Khoảng 8% nam giới bị deuteranopia,
+  /// và đây là app dùng để phân biệt tôm bệnh với tôm khỏe — nhầm lẫn ở đây là
+  /// nhầm lẫn có hậu quả.
+  ///
+  /// Cặp xanh dương/đỏ dưới đây đạt **ΔE 23.8**, dư an toàn, mà vẫn giữ được ý
+  /// nghĩa "đỏ là cảnh báo". Tương phản trên nền sáng 4.30/4.68 và nền tối
+  /// 3.94/3.62, đều vượt mức 3.0.
+  static const List<Color> _light = [Color(0xFF2A78D6), Color(0xFFD03B3B)];
+  static const List<Color> _dark = [Color(0xFF3987E5), Color(0xFFD03B3B)];
 
   static String labelOf(int id) =>
       (id >= 0 && id < labels.length) ? labels[id] : 'Không rõ ($id)';
 
-  static Color colorOf(int id) =>
-      (id >= 0 && id < colors.length) ? colors[id] : Colors.grey;
+  static String markOf(int id) => (id >= 0 && id < marks.length) ? marks[id] : '?';
+
+  static IconData iconOf(int id) =>
+      (id >= 0 && id < icons.length) ? icons[id] : Icons.help_rounded;
+
+  static Color colorOf(int id, Brightness brightness) {
+    final palette = brightness == Brightness.dark ? _dark : _light;
+    return (id >= 0 && id < palette.length) ? palette[id] : Colors.grey;
+  }
 }
 
 class ModelConfig {

@@ -88,11 +88,19 @@ class _DetectScreenState extends State<DetectScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Nhận diện tôm bệnh'),
-        backgroundColor: theme.colorScheme.inversePrimary,
+        title: const Text(
+          'Nhận diện tôm bệnh',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: false,
+        backgroundColor: theme.colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
       ),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             Expanded(child: _buildPreview(theme)),
@@ -100,105 +108,131 @@ class _DetectScreenState extends State<DetectScreen> {
           ],
         ),
       ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'gallery',
-            onPressed: _busy ? null : () => _pick(ImageSource.gallery),
-            icon: const Icon(Icons.photo_library_outlined),
-            label: const Text('Thư viện'),
+    );
+  }
+
+  // ======================= KHUNG ẢNH =======================
+
+  Widget _buildPreview(ThemeData theme) {
+    if (_error != null) {
+      return _placeholder(
+        theme,
+        icon: Icons.error_outline_rounded,
+        tint: theme.colorScheme.error,
+        title: 'Đã xảy ra lỗi',
+        subtitle: _error,
+      );
+    }
+    if (!_detector.isLoaded) {
+      return _placeholder(
+        theme,
+        icon: Icons.downloading_rounded,
+        tint: theme.colorScheme.primary,
+        title: 'Đang nạp model…',
+      );
+    }
+
+    final file = _imageFile;
+    final decoded = _decoded;
+    if (file == null || decoded == null) {
+      return _placeholder(
+        theme,
+        icon: Icons.add_photo_alternate_outlined,
+        tint: theme.colorScheme.primary,
+        title: 'Chọn một ảnh để bắt đầu',
+        subtitle: 'yolo11n chạy ngay trên máy — không cần mạng, '
+            'ảnh không rời khỏi thiết bị',
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      child: Center(
+        child: AspectRatio(
+          aspectRatio: decoded.width / decoded.height,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // fill chứ không phải cover: toạ độ box giả định toàn bộ ảnh
+                  // phủ kín canvas. AspectRatio bên ngoài đã giữ đúng tỉ lệ nên
+                  // fill không làm méo, mà lại loại hẳn khả năng bị cắt viền.
+                  Image.file(file, fit: BoxFit.fill),
+                  CustomPaint(
+                    painter: DetectionPainter(
+                      detections: _result.detections,
+                      imageWidth: decoded.width,
+                      imageHeight: decoded.height,
+                      brightness: theme.brightness,
+                    ),
+                  ),
+                  if (_busy)
+                    ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(width: 12),
-          FloatingActionButton.extended(
-            heroTag: 'camera',
-            onPressed: _busy ? null : () => _pick(ImageSource.camera),
-            icon: const Icon(Icons.photo_camera_outlined),
-            label: const Text('Chụp'),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildPreview(ThemeData theme) {
-    if (_error != null) {
-      return _centered(
-        icon: Icons.error_outline,
-        color: theme.colorScheme.error,
-        title: _error!,
-      );
-    }
-    if (!_detector.isLoaded) {
-      return _centered(
-        icon: Icons.hourglass_empty,
-        color: theme.colorScheme.primary,
-        title: 'Đang nạp model...',
-      );
-    }
-    final file = _imageFile;
-    final decoded = _decoded;
-    if (file == null || decoded == null) {
-      return _centered(
-        icon: Icons.image_search,
-        color: theme.colorScheme.primary,
-        title: 'Chọn một ảnh để bắt đầu',
-        subtitle: 'Model yolo11n chạy ngay trên máy, không cần mạng',
-      );
-    }
-
-    return Stack(
-      children: [
-        Center(
-          child: AspectRatio(
-            aspectRatio: decoded.width / decoded.height,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.file(file, fit: BoxFit.fill),
-                CustomPaint(
-                  painter: DetectionPainter(
-                    detections: _result.detections,
-                    imageWidth: decoded.width,
-                    imageHeight: decoded.height,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_busy)
-          const Positioned.fill(
-            child: ColoredBox(
-              color: Colors.black26,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _centered({
+  Widget _placeholder(
+    ThemeData theme, {
     required IconData icon,
-    required Color color,
+    required Color tint,
     required String title,
     String? subtitle,
   }) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 56, color: color),
-            const SizedBox(height: 12),
-            Text(title, textAlign: TextAlign.center),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: tint.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 44, color: tint),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             if (subtitle != null) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
               ),
             ],
           ],
@@ -207,82 +241,227 @@ class _DetectScreenState extends State<DetectScreen> {
     );
   }
 
+  // ======================= BẢNG KẾT QUẢ =======================
+
   Widget _buildPanel(ThemeData theme) {
+    final hasResult = _decoded != null;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
+        ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _stat(
-                label: ShrimpClass.labels[ShrimpClass.healthy],
-                value: '${_result.healthyCount}',
-                color: ShrimpClass.colors[ShrimpClass.healthy],
-              ),
-              _stat(
-                label: ShrimpClass.labels[ShrimpClass.diseased],
-                value: '${_result.diseasedCount}',
-                color: ShrimpClass.colors[ShrimpClass.diseased],
-              ),
-              _stat(
-                label: 'Tỉ lệ bệnh',
-                value: '${_result.diseaseRate.toStringAsFixed(0)}%',
-                color: theme.colorScheme.onSurface,
-              ),
-              _stat(
-                label: 'Thời gian',
-                value: '${_result.inferenceMs}ms',
-                color: theme.colorScheme.onSurface,
-              ),
+              _stat(theme, classId: ShrimpClass.healthy),
+              _divider(theme),
+              _stat(theme, classId: ShrimpClass.diseased),
+              _divider(theme),
+              _totalStat(theme),
             ],
           ),
-          const SizedBox(height: 4),
+          if (hasResult) ...[
+            const SizedBox(height: 18),
+            _diseaseMeter(theme),
+          ],
+          const SizedBox(height: 18),
+          _thresholdRow(theme),
+          const SizedBox(height: 16),
+          _actions(theme),
+        ],
+      ),
+    );
+  }
+
+  /// Con số mặc màu chữ, biểu tượng màu bên cạnh mới mang danh tính lớp — nếu
+  /// tô màu thẳng vào chữ số thì người mù màu mất luôn cả số lẫn nhãn.
+  Widget _stat(ThemeData theme, {required int classId}) {
+    final color = ShrimpClass.colorOf(classId, theme.brightness);
+    final count = classId == ShrimpClass.healthy
+        ? _result.healthyCount
+        : _result.diseasedCount;
+
+    return Expanded(
+      child: Column(
+        children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Ngưỡng ${_confThreshold.toStringAsFixed(2)}'),
-              Expanded(
-                child: Slider(
-                  value: _confThreshold,
-                  min: 0.05,
-                  max: 0.95,
-                  divisions: 18,
-                  label: _confThreshold.toStringAsFixed(2),
-                  onChanged: (v) => setState(() => _confThreshold = v),
-                  onChangeEnd: (_) => _run(),
+              Icon(ShrimpClass.iconOf(classId), size: 18, color: color),
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.0,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            ShrimpClass.labelOf(classId),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _stat({
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _totalStat(ThemeData theme) {
     return Expanded(
       child: Column(
         children: [
           Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
+            '${_result.total}',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.0,
             ),
           ),
-          Text(label, style: const TextStyle(fontSize: 11)),
+          const SizedBox(height: 5),
+          Text(
+            'Tổng số con',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _divider(ThemeData theme) => Container(
+        width: 1,
+        height: 34,
+        color: theme.colorScheme.outlineVariant,
+      );
+
+  Widget _diseaseMeter(ThemeData theme) {
+    final rate = _result.diseaseRate;
+    final color = ShrimpClass.colorOf(ShrimpClass.diseased, theme.brightness);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Tỉ lệ tôm bệnh',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${rate.toStringAsFixed(0)}%',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Stack(
+            children: [
+              Container(height: 8, color: theme.colorScheme.outlineVariant),
+              FractionallySizedBox(
+                widthFactor: (rate / 100).clamp(0.0, 1.0),
+                child: Container(height: 8, color: color),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _thresholdRow(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Ngưỡng tin cậy',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              _confThreshold.toStringAsFixed(2),
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            if (_result.inferenceMs > 0) ...[
+              Text(
+                '  ·  ${_result.inferenceMs} ms',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 4,
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+          ),
+          child: Slider(
+            value: _confThreshold,
+            min: 0.05,
+            max: 0.95,
+            divisions: 18,
+            label: _confThreshold.toStringAsFixed(2),
+            onChanged: (v) => setState(() => _confThreshold = v),
+            onChangeEnd: (_) => _run(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _actions(ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.tonalIcon(
+            onPressed: _busy ? null : () => _pick(ImageSource.gallery),
+            icon: const Icon(Icons.photo_library_outlined, size: 20),
+            label: const Text('Thư viện'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 15),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: _busy ? null : () => _pick(ImageSource.camera),
+            icon: const Icon(Icons.photo_camera_outlined, size: 20),
+            label: const Text('Chụp ảnh'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 15),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

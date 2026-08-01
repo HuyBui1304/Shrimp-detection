@@ -31,18 +31,58 @@ class Detection {
       'Detection($label ${(score * 100).toStringAsFixed(1)}% $box)';
 }
 
+/// Thời gian từng khâu, tính bằng micro giây.
+///
+/// Tách ra vì hai khâu này phụ thuộc vào những thứ khác hẳn nhau: [model] ăn
+/// theo sức mạnh CPU nên máy mạnh hơn là nhanh hơn, còn [tensor] là chi phí
+/// cấp phát của Dart nên đổi máy gần như không giúp gì — phải đổi kiểu dữ liệu.
+class DetectionTimings {
+  final int decodeUs;
+  final int letterboxUs;
+  final int tensorUs;
+  final int modelUs;
+  final int postprocessUs;
+
+  const DetectionTimings({
+    this.decodeUs = 0,
+    required this.letterboxUs,
+    required this.tensorUs,
+    required this.modelUs,
+    required this.postprocessUs,
+  });
+
+  int get totalUs => letterboxUs + tensorUs + modelUs + postprocessUs;
+
+  String get summary => 'letterbox ${_ms(letterboxUs)} · '
+      'dựng tensor ${_ms(tensorUs)} · '
+      'model ${_ms(modelUs)} · '
+      'giải mã+NMS ${_ms(postprocessUs)} · '
+      'tổng ${_ms(totalUs)}';
+
+  static String _ms(int us) => '${(us / 1000).toStringAsFixed(1)}ms';
+
+  static const zero = DetectionTimings(
+    letterboxUs: 0,
+    tensorUs: 0,
+    modelUs: 0,
+    postprocessUs: 0,
+  );
+}
+
 /// Kết quả một lần chạy suy luận, kèm số liệu để hiển thị lên panel.
 class DetectionResult {
   final List<Detection> detections;
   final int inferenceMs;
   final int srcWidth;
   final int srcHeight;
+  final DetectionTimings timings;
 
   const DetectionResult({
     required this.detections,
     required this.inferenceMs,
     required this.srcWidth,
     required this.srcHeight,
+    this.timings = DetectionTimings.zero,
   });
 
   int get healthyCount =>

@@ -12,36 +12,100 @@ Model dùng chung với web app FastAPI ở thư mục gốc (`models/best.pt`),
 | Model | YOLO11n, 2.58 triệu tham số, 4.1 GFLOPs |
 | Kích thước ảnh vào | 512×512 (đúng bằng lúc train) |
 | Chất lượng | mAP50-95 = 0.807 |
-| Lớp | `0` = Tôm khỏe (xanh lá), `1` = Tôm bệnh (đỏ) |
+| Lớp | `0` = Tôm khỏe (xanh dương ✓), `1` = Tôm bệnh (đỏ !) |
 | File model trên máy | ~10.5 MB |
+| File APK bản release | ~78 MB (gộp đủ kiến trúc CPU) |
+
+## Chạy nhanh
+
+Máy đã cài Flutter và Android SDK rồi thì chỉ cần:
+
+```bash
+flutter emulators --launch Pixel_9a    # hoặc cắm điện thoại qua USB
+cd mobile_app
+flutter pub get
+flutter run
+```
+
+Chưa cài gì thì đọc mục 1. Thư viện ảnh của emulator mặc định rỗng nên nhớ đẩy
+ảnh vào trước — xem mục 3.
 
 ---
 
-## 1. Yêu cầu
+## 1. Cài đặt môi trường
 
-- **Flutter** 3.44+ (kèm Dart 3.12+)
-- **Android SDK** + một emulator hoặc điện thoại Android thật
-- **Python 3.11** — chỉ cần khi bạn muốn xuất lại model từ `best.pt`
+### Cần những gì
 
-Kiểm tra nhanh:
+| Thành phần | Bản đã kiểm chứng | Bắt buộc? |
+|---|---|---|
+| Flutter (kèm Dart) | 3.44.8 / Dart 3.12.2 | Có |
+| Android SDK | platform 36, build-tools 36.1.0 | Có |
+| JDK | 21 (đi kèm Android Studio) | Có |
+| Emulator hoặc máy Android thật | Android 13+ | Có |
+| Python | 3.11 | Chỉ khi xuất lại model |
+| Xcode | — | Chỉ khi build cho iPhone |
+
+### Các bước trên macOS
 
 ```bash
+# 1. Flutter
+brew install --cask flutter
+
+# 2. Android Studio (kèm luôn SDK, JDK 21 và trình quản lý emulator)
+brew install --cask android-studio
+# mở Android Studio một lần để nó tải SDK, rồi đóng lại
+
+# 3. Chấp nhận toàn bộ giấy phép Android
+flutter doctor --android-licenses     # bấm y cho tất cả
+
+# 4. Tạo một emulator nếu chưa có
+flutter emulators --create --name Pixel_9a
+
+# 5. Kiểm tra lại
 flutter doctor
 ```
 
-Chỉ cần hai dòng `[✓] Flutter` và `[✓] Android toolchain` là chạy được.
-Dòng `[!] Xcode` báo đỏ thì kệ nó — đó là phần dành cho iOS.
+### Thế nào là cài xong
 
-<details>
-<summary>Nếu máy chưa có Flutter</summary>
-
-```bash
-brew install --cask flutter
-flutter doctor --android-licenses   # bấm y cho tất cả
+```
+[✓] Flutter (Channel stable, 3.44.8, on macOS, locale vi-VN)
+[✓] Android toolchain - develop for Android devices (Android SDK version 36.1.0)
+[!] Xcode - develop for iOS and macOS          ← bỏ qua được nếu chỉ làm Android
+[✓] Chrome - develop for the web
+[✓] Connected device (3 available)
+[✓] Network resources
 ```
 
-Nếu tải giữa chừng đứt (`curl: (56) Recv failure`), chạy lại đúng lệnh đó —
-Homebrew tải tiếp chỗ dở chứ không tải lại từ đầu.
+**Chỉ cần hai dòng `[✓] Flutter` và `[✓] Android toolchain`** là chạy được app
+này. Dòng `[!] Xcode` không ảnh hưởng gì tới Android — xem mục 7 nếu bạn muốn
+build cho iPhone.
+
+### Nạp thư viện của project
+
+```bash
+cd mobile_app
+flutter pub get
+```
+
+Các gói được dùng:
+
+| Gói | Việc |
+|---|---|
+| `tflite_flutter` | chạy model TFLite trên thiết bị |
+| `image` | giải mã ảnh, resize, nắn hướng theo EXIF |
+| `image_picker` | chọn ảnh từ thư viện hoặc chụp mới |
+| `integration_test` | chạy test trên thiết bị thật |
+
+<details>
+<summary>Nếu tải Flutter bị đứt giữa chừng</summary>
+
+```
+Error: Download failed on Cask 'flutter'
+curl: (56) Recv failure: Connection reset by peer
+```
+
+Chạy lại đúng lệnh `brew install --cask flutter` — Homebrew tải tiếp chỗ dở chứ
+không tải lại từ đầu.
 </details>
 
 ---
@@ -102,6 +166,32 @@ flutter emulators --launch Pixel_9a
 cd mobile_app
 flutter run
 ```
+
+**Thư viện ảnh của emulator mặc định rỗng**, nên phải đẩy ảnh vào trước khi thử:
+
+```bash
+# đẩy vài ảnh từ tập test
+for f in $(ls ../data/tom_benh.v1i.yolov11/test/images/*.jpg | head -12); do
+    adb push "$f" "/sdcard/Pictures/$(basename $f)"
+done
+
+# bắt buộc: không quét lại thì trình chọn ảnh không thấy file vừa đẩy
+for f in $(adb shell ls /sdcard/Pictures/ | tr -d '\r'); do
+    adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE \
+        -d "file:///sdcard/Pictures/$f"
+done
+```
+
+Nút **Chụp** cũng bấm được trên emulator, nhưng camera sau của máy ảo dựng một
+căn phòng 3D (`hw.camera.back=virtualscene`) nên kết quả luôn là 0 con tôm.
+Muốn thử camera bằng ảnh thật thì trỏ nó sang webcam của máy Mac:
+
+```bash
+sed -i '' 's/hw.camera.back=virtualscene/hw.camera.back=webcam0/' \
+    ~/.android/avd/Pixel_9a.avd/config.ini
+```
+
+rồi khởi động lại emulator và giơ ảnh tôm trước webcam.
 
 ### Trên điện thoại Android thật
 
@@ -180,6 +270,28 @@ lớp 1 (Tôm bệnh) conf 0.9047  box (  0.2, 245.2,  63.6, 327.3)
 
 Test đơn vị đạt mà test tích hợp hỏng thì lỗi nằm ở khâu nạp model hoặc ở phần
 ghép chuỗi trong `yolo_detector.dart`, không phải ở phần toán học.
+
+### Đo thời gian từng khâu
+
+```bash
+flutter test integration_test/timing_test.dart -d emulator-5554
+```
+
+In ra thời gian tiêu ở mỗi khâu, để biết nên tối ưu chỗ nào thay vì đoán. Đo
+trên emulator Pixel_9a, trung bình 10 lần chạy sau khi bỏ 3 lần khởi động:
+
+```
+  letterbox           31.7 ms   11.7%
+  dựng tensor         27.1 ms   10.1%
+  chạy model         210.9 ms   78.1%
+  giải mã + NMS        0.2 ms    0.1%
+```
+
+Kết luận quan trọng cho việc làm camera realtime: **phần lớn thời gian là bản
+thân model chạy, không phải phần chuẩn bị dữ liệu bằng Dart.** Nghĩa là tối ưu
+code Dart chỉ mua được nhiều nhất khoảng 60 ms; muốn nhanh hơn hẳn thì phải
+dùng máy thật (emulator không có NNAPI/GPU delegate), bật delegate phần cứng,
+hoặc xuất bản model lượng tử hoá int8.
 
 ---
 
@@ -349,3 +461,22 @@ một bài toán nhận diện biển báo giao thông, không có ý nghĩa gì
 
 **Ngưỡng mặc định** conf 0.25 và IoU 0.60 — lấy trùng `INFER_IOU` trong
 `app/main.py` để hai đường cho kết quả nhất quán.
+
+**Vì sao tôm khỏe màu xanh dương chứ không phải xanh lá.** Cặp xanh lá/đỏ là cái
+bẫy mù màu kinh điển. Đo bằng OKLab ΔE với ma trận mô phỏng Machado 2009:
+
+| Cặp màu | ΔE ở dạng deuteranopia | Ngưỡng an toàn |
+|---|---|---|
+| Xanh lá `#22C55E` / đỏ `#EF4444` | 7.4 | 8 |
+| Xanh lá `#0CA30C` / đỏ `#D03B3B` | 4.1 | 8 |
+| **Xanh dương `#2A78D6` / đỏ `#D03B3B`** | **23.8** | 8 |
+
+Khoảng 8% nam giới bị deuteranopia. Đây là app dùng để phân biệt tôm bệnh với
+tôm khỏe, nhầm ở đây là nhầm có hậu quả thật, nên màu được chọn theo số đo chứ
+không theo thói quen. Ngoài màu ra còn hai kênh phụ nữa để không bao giờ phải
+dựa vào màu một mình: **ký hiệu** `✓` / `!` trên nhãn box, và **biểu tượng**
+tick tròn / chấm than trong bảng chỉ số.
+
+Con số trong bảng chỉ số cố tình để màu chữ thường, không tô theo màu lớp — dấu
+màu nằm cạnh mới là thứ mang danh tính. Tô màu thẳng vào chữ số thì người mù màu
+mất luôn cả con số lẫn nhãn.

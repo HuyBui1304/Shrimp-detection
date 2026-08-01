@@ -1,8 +1,13 @@
 # Shrimp Detection
 
-Web application for shrimp detection using a custom Ultralytics YOLO model.
-The FastAPI service supports image inference, uploaded-video streaming, and
-live camera inference from the browser.
+Shrimp detection using a custom Ultralytics YOLO model, in two independent
+front ends that share the same weights:
+
+- **Web app** — a FastAPI service with image inference, uploaded-video
+  streaming, and live camera inference from the browser. Documented below.
+- **Android app** — Flutter, running the model on-device via TFLite with no
+  server and no network. See **[mobile_app/README.md](mobile_app/README.md)**
+  for its own setup and run instructions.
 
 ## Repository structure
 
@@ -11,12 +16,19 @@ shrimp-detection/
 |-- app/
 |   |-- main.py                  # FastAPI application
 |   `-- static/                  # Web interface and PWA assets
+|-- mobile_app/                  # Flutter Android app (on-device TFLite)
+|   |-- lib/                     # Dart source
+|   |-- assets/models/           # Exported .tflite model
+|   `-- README.md                # Setup and run guide for the mobile app
 |-- docs/images/                 # Documentation images
 |-- models/best.pt               # YOLO model weights
 |-- scripts/
 |   |-- benchmark_api.py         # End-to-end API benchmark
 |   |-- benchmark_model.py       # Local model benchmark
-|   `-- run_benchmark.sh         # Benchmark helper
+|   |-- run_benchmark.sh         # Benchmark helper
+|   |-- export_tflite.py         # best.pt -> TFLite for the mobile app
+|   |-- verify_tflite.py         # Cross-check TFLite against PyTorch
+|   `-- requirements-export.txt  # Pinned deps for the export pipeline
 |-- training_notebooks/          # Training notebooks
 |-- uploads/                     # Runtime uploads, ignored by Git
 |-- runs/                        # Generated output, ignored by Git

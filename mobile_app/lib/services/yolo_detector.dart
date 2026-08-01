@@ -50,13 +50,18 @@ class YoloDetector {
     }
 
     final stopwatch = Stopwatch()..start();
+    final phase = Stopwatch()..start();
 
     final prepared = letterbox(
       source,
       size: inputSize,
       padColor: ModelConfig.padGray,
     );
+    final letterboxUs = phase.elapsedMicroseconds;
+
+    phase.reset();
     final input = toInputTensor(prepared.image);
+    final tensorUs = phase.elapsedMicroseconds;
 
     final channels = _outputShape[1];
     final anchors = _outputShape[2];
@@ -64,7 +69,11 @@ class YoloDetector {
       List.generate(channels, (_) => List<double>.filled(anchors, 0.0)),
     ];
 
+    phase.reset();
     interpreter.run(input, output);
+    final modelUs = phase.elapsedMicroseconds;
+
+    phase.reset();
 
     // Duỗi phẳng theo đúng thứ tự [kênh][anchor] mà decodeYolo mong đợi.
     final flat = List<double>.filled(channels * anchors, 0.0);
@@ -93,6 +102,7 @@ class YoloDetector {
         .where((d) => d.box.width > 1 && d.box.height > 1)
         .toList();
 
+    final postprocessUs = phase.elapsedMicroseconds;
     stopwatch.stop();
 
     return DetectionResult(
@@ -100,6 +110,12 @@ class YoloDetector {
       inferenceMs: stopwatch.elapsedMilliseconds,
       srcWidth: source.width,
       srcHeight: source.height,
+      timings: DetectionTimings(
+        letterboxUs: letterboxUs,
+        tensorUs: tensorUs,
+        modelUs: modelUs,
+        postprocessUs: postprocessUs,
+      ),
     );
   }
 }
