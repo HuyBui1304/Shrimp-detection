@@ -17,6 +17,7 @@ htmlcov/
 # Virtual environments and local configuration
 .env
 .venv/
+.venv-export/
 venv/
 env/
 
@@ -39,3 +40,8 @@ benchmark_*.csv
 # Notebooks and training outputs
 .ipynb_checkpoints/
 wandb/
+
+# Sản phẩm trung gian của scripts/export_tflite.py
+models/best.onnx
+models/tflite_export/
+calibration_image_sample_data_*.npy

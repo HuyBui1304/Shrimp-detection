@@ -1,0 +1,17 @@
+gradle-wrapper.jar
+/.gradle
+# Gradle vẫn ghi report vào android/build/ dù build.gradle.kts đã chuyển thư
+# mục build ra chỗ khác, và .gitignore của Flutter chỉ chặn /build/ ở gốc.
+/build/
+/captures/
+/gradlew
+/gradlew.bat
+/local.properties
+GeneratedPluginRegistrant.java
+.cxx/
+
+# Remember to never publicly share your keystore.
+# See https://flutter.dev/to/reference-keystore
+key.properties
+**/*.keystore
+**/*.jks
